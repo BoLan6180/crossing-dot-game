@@ -36,13 +36,15 @@ export const MiniBoardInSetting = (props: MiniBoardInSettingProps) => {
     setMiniBoardInSetting(newMiniBoard)
   }
 
+  const row = miniBoardInSetting.length
+  const col = miniBoardInSetting[0].length
 
   return <div className="w-[50%] m-auto">
     {miniBoardInSetting.map((boardRow, x) => {
-      return <div key={x} className="flex justify-around gap-x-2 mt-2">
+      return <div key={x + row * col} className="flex justify-around gap-x-2 mt-2">
         {
           boardRow.map((dot, y) => {
-            return <DotComp key={x + y + dot.status}
+            return <DotComp key={x + y + dot.status + x * y}
               onClick={() => handleClick(x, y, dot)}
               status={dot.status}
             />
