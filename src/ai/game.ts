@@ -90,7 +90,7 @@ export const getNextOptimalMove = (input: GetNextOptimalMove): [Dot, Dot][] => {
 
   // 初始化
   const visitedPathAndScoreMap: Map<string, number> = new Map()
-  let scores = [], optimalMoves = []
+  let scores: number[] = [], optimalMoves = []
 
   const initialVisitedPath = getInitialVisitedPath(board)
   for (let possibleMove of allPossibleNextMoves) {
@@ -120,13 +120,18 @@ export const getNextOptimalMove = (input: GetNextOptimalMove): [Dot, Dot][] => {
     }
   })
 
-
-  for (let i = 0; i < scores.length; i++) {
-    if (scores[i] === maxScore) {
-      optimalMoves.push(allPossibleNextMoves[i])
-    }
+  // 如果分数最大值大于THRESHOLD，则证明有最优的下一步，将所有的最优解推入optimalMoves
+  if (maxScore >= THRESHOLD) {
+    scores.forEach((score, i) => {
+      if (score === maxScore) {
+        optimalMoves.push(allPossibleNextMoves[i])
+      }
+    })
+  } else {
+    // 没有最优的下一步，输出第一个只划了一个点的move
+    const optimalMove = allPossibleNextMoves.find((move) => getNumberOfDotsPassed(move) === 1)
+    optimalMoves.push(optimalMove!)
   }
-
 
   // 将下一步的最优解根据所用棋子数量从多到少排序，尽快结束游戏
   optimalMoves.sort((a, b) => {
@@ -178,7 +183,7 @@ export const minimax = (input: Minimax): number => {
   const { board, player, lastMoveFrom, lastMoveTo, usedDepth, visitedPath, visitedPathAndScoreMap } = input
 
   // base condition
-  if (checkIfFinishedV2(visitedPath)) {
+  if (checkIfFinished(visitedPath)) {
     return evalFinishedGame({
       lastMoveFrom: lastMoveFrom,
       lastMoveTo: lastMoveTo,
@@ -212,7 +217,7 @@ export const minimax = (input: Minimax): number => {
       const newVisitedPath = updateVisitedPath(visitedPath, passedDotIndexArr)
 
       // 如果移动棋子之后，棋局结束，则直接计算得分
-      if (checkIfFinishedV2(newVisitedPath)) {
+      if (checkIfFinished(newVisitedPath)) {
         value = minimax({
           board: board,
           player: player === 'self' ? 'opponent' : 'self',
@@ -343,8 +348,6 @@ const convertCoordinateToOrderedIndex = (input: ConvertCoordinateToOrderedIndex)
   const { row, col, colLength } = input
   return row * colLength + col
 }
-
-
 
 /**
  * 
@@ -524,167 +527,76 @@ const getNextDot = (currentDot: Dot, row: number, col: number): Dot | null => {
   return { x: currentDot.x, y: currentDot.y + 1 }
 }
 
-export const move = (step: number, board: Board, x: number, y: number): [Dot, Dot][] => {
+type Direction = 'top' | 'topRight' | 'right' | 'bottomRight' | 'bottom' | 'bottomLeft' | 'left' | 'topLeft'
+type MoveStepTowardsDirection = {
+  x: number;
+  y: number;
+  step: number;
+  direction: Direction;
+}
+const moveStepTowardsDirection = (input: MoveStepTowardsDirection) => {
+  const { x, y, step, direction } = input
+  switch (direction) {
+    case 'top': return { x: x - step, y }
+    case 'topRight': return { x: x - step, y: y + step }
+    case 'right': return { x, y: y + step }
+    case 'bottomRight': return { x: x + step, y: y + step }
+    case 'bottom': return { x: x + step, y }
+    case 'bottomLeft': return { x: x + step, y: y - step }
+    case 'left': return { x, y: y - step }
+    case 'topLeft': return { x: x - step, y: y - step }
+    default: return { x, y }
+  }
+}
 
+type DirectionInput = {
+  boundaryValidation: boolean;
+  x: number;
+  y: number;
+  step: number;
+  res: [Dot, Dot][];
+  board: Board;
+  direction: Direction
+}
+const checkAndAddValidMove = (input: DirectionInput) => {
+  const { boundaryValidation, x, y, step, res, board, direction } = input
+
+  if (boundaryValidation) {
+    let isValid = true
+    for (let i = 1; i <= step; i++) {
+      const { x: newX, y: newY } = moveStepTowardsDirection({ x, y, step: i, direction })
+      if (board[newX][newY].status !== 'empty') {
+        isValid = false
+        break
+      }
+    }
+
+    if (isValid) {
+      const { x: newX, y: newY } = moveStepTowardsDirection({ x, y, step, direction })
+      res.push([
+        { x, y },
+        { x: newX, y: newY }
+      ])
+    }
+  }
+}
+
+export const move = (step: number, board: Board, x: number, y: number): [Dot, Dot][] => {
   const row = board.length
   const col = board[0].length
 
   let res: [Dot, Dot][] = []
-  // 上
-  if (x - step >= 0) {
-    let isValid = true
-    for (let i = 1; i <= step; i++) {
-      if (board[x - i][y].status !== 'empty') {
-        isValid = false
-        break
-      }
-    }
-    if (isValid) {
-      res.push([
-        { x, y },
-        { x: x - step, y }
-      ])
-    }
-  }
-
-  // 右上
-  if (x - step >= 0 && y + step < col) {
-    let isValid = true
-    for (let i = 1; i <= step; i++) {
-      if (board[x - i][y + i].status !== 'empty') {
-        isValid = false
-        break
-      }
-    }
-    if (isValid) {
-      res.push([
-        { x, y },
-        { x: x - step, y: y + step }
-      ])
-    }
-  }
-
-  // 右
-  if (y + step < col) {
-    let isValid = true
-    for (let i = 1; i <= step; i++) {
-      if (board[x][y + i].status !== 'empty') {
-        isValid = false
-        break
-      }
-    }
-    if (isValid) {
-      res.push([
-        { x, y },
-        { x, y: y + step }
-      ])
-    }
-  }
-
-  // 右下
-  if (x + step < row && y + step < col) {
-    let isValid = true
-    for (let i = 1; i <= step; i++) {
-      if (board[x + i][y + i].status !== 'empty') {
-        isValid = false
-        break
-      }
-    }
-    if (isValid) {
-      res.push([
-        { x, y },
-        { x: x + step, y: y + step }
-      ])
-    }
-  }
-
-  // 下
-  if (x + step < row) {
-    let isValid = true
-    for (let i = 1; i <= step; i++) {
-      if (board[x + i][y].status !== 'empty') {
-        isValid = false
-        break
-      }
-    }
-    if (isValid) {
-      res.push([
-        { x, y },
-        { x: x + step, y }
-      ])
-    }
-  }
-
-  // 左下
-  if (x + step < row && y - step >= 0) {
-    let isValid = true
-    for (let i = 1; i <= step; i++) {
-      if (board[x + i][y - i].status !== 'empty') {
-        isValid = false
-        break
-      }
-    }
-    if (isValid) {
-      res.push([
-        { x, y },
-        { x: x + step, y: y - step }
-      ])
-    }
-  }
-
-  // 左
-  if (y - step >= 0) {
-    let isValid = true
-    for (let i = 1; i <= step; i++) {
-      if (board[x][y - i].status !== 'empty') {
-        isValid = false
-        break
-      }
-    }
-    if (isValid) {
-      res.push([
-        { x, y },
-        { x, y: y - step }
-      ])
-    }
-  }
-
-  // 左上
-  if (x - step >= 0 && y - step >= 0) {
-    let isValid = true
-    for (let i = 1; i <= step; i++) {
-      if (board[x - i][y - i].status !== 'empty') {
-        isValid = false
-        break
-      }
-    }
-    if (isValid) {
-      res.push([
-        { x, y },
-        { x: x - step, y: y - step }
-      ])
-    }
-  }
-
+  checkAndAddValidMove({ boundaryValidation: x - step >= 0, x, y, step, res, board, direction: 'top' })
+  checkAndAddValidMove({ boundaryValidation: x - step >= 0 && y + step < col, x, y, step, res, board, direction: 'topRight' })
+  checkAndAddValidMove({ boundaryValidation: y + step < col, x, y, step, res, board, direction: 'right' })
+  checkAndAddValidMove({ boundaryValidation: x + step < row && y + step < col, x, y, step, res, board, direction: 'bottomRight' })
+  checkAndAddValidMove({ boundaryValidation: x + step < row, x, y, step, res, board, direction: 'bottom' })
+  checkAndAddValidMove({ boundaryValidation: x + step < row && y - step >= 0, x, y, step, res, board, direction: 'bottomLeft' })
+  checkAndAddValidMove({ boundaryValidation: y - step >= 0, x, y, step, res, board, direction: 'left' })
+  checkAndAddValidMove({ boundaryValidation: x - step >= 0 && y - step >= 0, x, y, step, res, board, direction: 'topLeft' })
   return res
 }
 
-
-export const checkIfFinished = (board: Board) => {
-  if (board.length === 0) return false
-  const row = board.length;
-  const col = board[0].length;
-  for (let i = 0; i < row; i++) {
-    for (let j = 0; j < col; j++) {
-      if (['empty', 'selecting'].includes(board[i][j].status)) {
-        return false
-      }
-    }
-  }
-  return true
-}
-
-
-export const checkIfFinishedV2 = (visitedPath: string) => {
+export const checkIfFinished = (visitedPath: string) => {
   return !visitedPath.includes(DotVisitedStatus.NotVisited)
 }

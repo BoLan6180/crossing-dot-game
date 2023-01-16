@@ -66,7 +66,8 @@ export type ContextValue = {
   setIsShowHint: React.Dispatch<React.SetStateAction<boolean>>;
   initGameBoard: (input: InitGameBoard) => void;
   resetGameBoard: () => void;
-  asyncGetNextOptimalMove: (board: Board, player?: Player) => Promise<[Dot, Dot][]>
+  asyncGetNextOptimalMove: (board: Board, player?: Player) => Promise<[Dot, Dot][]>,
+  checkIfFinished: (board: Board,) => boolean;
 }
 
 export const ConfigProviderContext = createContext<ContextValue | null>(null);
@@ -188,6 +189,20 @@ export const ConfigProvider = (props: ConfigProviderProps) => {
     })
   }, [])
 
+  const checkIfFinished = useCallback((board: Board) => {
+    if (board.length === 0) return false
+    const row = board.length;
+    const col = board[0].length;
+    for (let i = 0; i < row; i++) {
+      for (let j = 0; j < col; j++) {
+        if (['empty', 'selecting'].includes(board[i][j].status)) {
+          return false
+        }
+      }
+    }
+    return true
+  }, [])
+
   const configProviderContext = useMemo<ContextValue>(
     () =>
     ({
@@ -217,7 +232,8 @@ export const ConfigProvider = (props: ConfigProviderProps) => {
       setIsShowHint,
       initGameBoard,
       resetGameBoard,
-      asyncGetNextOptimalMove
+      asyncGetNextOptimalMove,
+      checkIfFinished
     })
     ,
     [boardSize,
@@ -246,7 +262,8 @@ export const ConfigProvider = (props: ConfigProviderProps) => {
       setIsShowHint,
       initGameBoard,
       resetGameBoard,
-      asyncGetNextOptimalMove
+      asyncGetNextOptimalMove,
+      checkIfFinished
     ]);
 
   return (

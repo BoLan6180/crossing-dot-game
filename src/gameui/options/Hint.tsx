@@ -1,9 +1,8 @@
-import { checkIfFinished } from "../../ai/game";
 import { useConsumer } from "../ConfigProvider";
 import { HintIcon } from "../icons/HintIcon";
 
 export const Hint = () => {
-  const { gameBoard, setHintMove, isShowHint, setIsShowHint, asyncGetNextOptimalMove } = useConsumer()
+  const { gameBoard, setHintMove, isShowHint, setIsShowHint, asyncGetNextOptimalMove, checkIfFinished } = useConsumer()
 
   const handleClick = async () => {
     if (!isShowHint) {
@@ -16,7 +15,7 @@ export const Hint = () => {
   const isGameFinished = checkIfFinished(gameBoard)
   return <>
     <button
-      className={`btn text-xs sm:text-sm ${isGameFinished ? 'btn-disabled' :'btn-outline btn-primary'}`} 
+      className={`btn text-xs sm:text-sm ${isGameFinished ? 'btn-disabled' : 'btn-outline btn-primary'}`}
       onClick={handleClick}
       disabled={isGameFinished}>
       {isShowHint ? '关闭' : ''}提示

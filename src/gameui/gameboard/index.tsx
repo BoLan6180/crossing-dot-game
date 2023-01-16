@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Board, checkIfFinished, makeMove, Dot, getPassedDotFromMove } from "../../ai/game";
+import { Board, makeMove, Dot, getPassedDotFromMove } from "../../ai/game";
 import { Chess } from './Chess'
 
 import _ from 'lodash'
@@ -31,7 +31,8 @@ export const GameBoard = () => {
     setRoundCount,
     setCurrentPlayer,
     setIsShowHint,
-    asyncGetNextOptimalMove
+    asyncGetNextOptimalMove,
+    checkIfFinished
   } = useConsumer()
 
   const [isShowModal, setIsShowModal] = useState<boolean>(false)
