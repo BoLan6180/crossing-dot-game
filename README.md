@@ -5,7 +5,7 @@ Implementation of minimax algorithm（without alpha beta pruning）that determin
 [>> Start Game](https://bolan6180.github.io/crossing-dot-game/dist/index.html)
 
 <div align="center">
-  <img src = '../crossing-dot-game/public/screenshots/screenshot.png' alt="screenshot" style="display:block; margin:0 auto; width:70%">
+  <img src = 'https://raw.githubusercontent.com/BoLan6180/crossing-dot-game/main/public/screenshots/screenshot.png' alt="screenshot" style="display:block; margin:0 auto; width:70%">
 </div><br/>
 
 ### How it works
